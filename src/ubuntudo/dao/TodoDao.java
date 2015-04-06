@@ -9,6 +9,28 @@ import org.slf4j.LoggerFactory;
 public class TodoDao extends JDBCManager {
 	private static final Logger logger = LoggerFactory.getLogger(UserDao.class);
 
+	public long retrieveLatestTid() {
+		logger.info("---->TodoDao.retrieveLatestTid");
+
+		conn = getConnection();
+		long latestTid = 0l;
+		String sql = "select max(tid) from todo;";
+		try {
+			pstmt = conn.prepareStatement(sql);
+			resultSet = pstmt.executeQuery();
+			if (resultSet.next()) {
+				latestTid = resultSet.getLong(1); 
+			}
+
+		} catch (SQLException e) {
+			logger.error("DB retrieveLatestTid Error: " + e.getMessage());
+		} finally {
+			close(resultSet, pstmt, conn);
+		}
+		logger.info("<----TodoDao.retrieveLatestTid");
+		return latestTid;
+	}
+
 	public int insertTodo(long assigner_id, long pid, String title, String contents, String dueDate, int completed, long last_editer_id) {
 		logger.info("---->TodoDao.insertTodo");
 
@@ -34,11 +56,27 @@ public class TodoDao extends JDBCManager {
 		logger.info("<----TodoDao.insertTodo");
 		return insertedRows;
 	}
-}
 
-// `tid, assigner_id, pid` INT NULL DEFAULT NULL,
-// `title` VARCHAR(255) NOT NULL,
-// `contents` VARCHAR(511) NULL,
-// `duedate` DATETIME NULL,
-// `completed` TINYINT NOT NULL,
-// `last_editer_id` INT NOT NULL,
+	public int insertTodoUserRelation(long tid, long uid, String todo_status) {
+		logger.info("---->TodoDao.insertTodoUserRelation");
+
+		conn = getConnection();
+		int insertedRows = 0;
+		String sql = "insert into todo_user_relation (tid, uid, todo_status) values (?, ?, ?)";
+		
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setLong(1, tid);
+			pstmt.setLong(2, uid);
+			pstmt.setString(3, todo_status);
+			insertedRows = pstmt.executeUpdate();
+
+		} catch (SQLException e) {
+			logger.error("DB insertTodo Error: " + e.getMessage());
+		} finally {
+			close(resultSet, pstmt, conn);
+		}
+		logger.info("<----TodoDao.insertTodoUserRelation");
+		return insertedRows;
+	}
+}
